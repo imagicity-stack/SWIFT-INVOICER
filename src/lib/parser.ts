@@ -65,16 +65,18 @@ const processRawData = (data: any[]): InvoiceData[] => {
     const quantity = parseFloat(row.quantity || row.Quantity || row.qty || '1');
     const unitPrice = parseFloat(row.unit_price || row.UnitPrice || row.price || row.Price || '0');
     const hsnCode = String(row.hsn || row.HSN || row.hsn_code || row.hsncode || '');
-    const taxRate = row.tax_rate || row.TaxRate || row.gst_rate || row.gstrate ? parseFloat(row.tax_rate || row.TaxRate || row.gst_rate || row.gstrate) : undefined;
+    const taxValue = row.tax_rate || row.TaxRate || row.gst_rate || row.gstrate;
+    const taxRate = taxValue ? parseFloat(taxValue) : null;
 
     invoice.items.push({
       description,
       hsnCode,
       quantity,
       unitPrice,
-      taxRate,
+      taxRate: taxRate ?? undefined, // TypeScript might want undefined, but we'll strip it before Firestore
     });
   });
 
-  return Array.from(invoicesMap.values());
+  // Clean up any undefined values before returning (Firestore doesn't like them)
+  return Array.from(invoicesMap.values()).map(inv => JSON.parse(JSON.stringify(inv)));
 };

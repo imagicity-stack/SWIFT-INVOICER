@@ -131,7 +131,13 @@ export default function InvoiceList({ invoices, settings, templateId, onDeleteIn
                         </div>
                       </div>
                       <DialogFooter className="p-6 border-t bg-white">
-                        <Button variant="outline" className="rounded-full">Print</Button>
+                        <Button 
+                          variant="outline" 
+                          className="rounded-full"
+                          onClick={() => window.print()}
+                        >
+                          Print
+                        </Button>
                         <Button 
                           className="bg-black text-white hover:bg-black/90 rounded-full"
                           onClick={() => handleDownload(invoice)}

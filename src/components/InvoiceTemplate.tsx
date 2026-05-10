@@ -189,7 +189,7 @@ export default function InvoiceTemplate({ invoice, settings, templateId }: Invoi
         </div>
         <div className="mt-8 pt-4 border-t border-gray-100 text-center">
           <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">
-            This is a computer generated invoice and does not require a physical signature.
+            This is a system generated invoice and does not require any signature.
           </p>
         </div>
       </div>
@@ -281,7 +281,7 @@ export default function InvoiceTemplate({ invoice, settings, templateId }: Invoi
         </div>
         <div className="mt-10 pt-4 border-t border-black/5 text-center opacity-30">
           <p className="text-[8px] font-bold uppercase tracking-widest">
-            Computer Generated // No Signature Required
+            System Generated // No Signature Required
           </p>
         </div>
       </div>
@@ -508,7 +508,7 @@ export default function InvoiceTemplate({ invoice, settings, templateId }: Invoi
         </div>
         <div className="mt-auto pt-8 text-center border-t-2 border-black/5">
           <p className="text-[9px] font-bold uppercase tracking-[0.2em] opacity-40">
-            This is a computer generated invoice and does not require a physical signature.
+            This is a system generated invoice and does not require any signature.
           </p>
         </div>
       </div>
