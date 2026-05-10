@@ -17,21 +17,23 @@ import {
   Search,
   PanelLeft,
   Briefcase,
-  Cloud,
-  CloudOff,
+  LogOut,
   Loader2
 } from 'lucide-react';
+import { onAuthStateChanged, signOut, User } from 'firebase/auth';
+import { doc, setDoc, onSnapshot } from 'firebase/firestore';
+import { auth, db, handleFirestoreError, OperationType } from './lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Toaster } from '@/components/ui/sonner';
 import { CompanySettings, InvoiceData, AppState, TemplateId } from './types';
-import { isFirebaseBackendConfigured, loadRemoteState, saveRemoteState } from './lib/api';
-import { toast } from 'sonner';
 import SettingsForm from './components/SettingsForm';
 import UploadSection from './components/UploadSection';
 import InvoiceList from './components/InvoiceList';
+import Auth from './components/Auth';
+import { toast } from 'sonner';
 
 const DEFAULT_SETTINGS: CompanySettings = {
   name: 'My Company',
@@ -52,104 +54,84 @@ const DEFAULT_SETTINGS: CompanySettings = {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('upload');
-  const [backendStatus, setBackendStatus] = useState<'local' | 'loading' | 'synced' | 'error'>(
-    isFirebaseBackendConfigured ? 'loading' : 'local'
-  );
-  const [appState, setAppState] = useState<AppState>(() => {
-    const saved = localStorage.getItem('swift_storage');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Failed to parse saved state', e);
-      }
-    }
-    return {
-      settings: DEFAULT_SETTINGS,
-      templateId: 'modern',
-      invoices: [],
-    };
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+
+  const [appState, setAppState] = useState<AppState>({
+    settings: DEFAULT_SETTINGS,
+    templateId: 'modern',
+    invoices: [],
   });
 
+  // Handle Auth State
   useEffect(() => {
-    if (!isFirebaseBackendConfigured) return;
-
-    let isMounted = true;
-
-    loadRemoteState()
-      .then((remoteState) => {
-        if (!isMounted) return;
-        if (remoteState) {
-          setAppState(remoteState);
-        }
-        setBackendStatus('synced');
-      })
-      .catch((error) => {
-        console.error('Failed to load Firebase state', error);
-        if (!isMounted) return;
-        setBackendStatus('error');
-        toast.error('Firebase sync is unavailable. Continuing with local storage.');
-      });
-
-    return () => {
-      isMounted = false;
-    };
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setIsAuthLoading(false);
+      if (!user) {
+        setIsLoadingSettings(false);
+      }
+    });
+    return unsubscribe;
   }, []);
 
+  // Handle Firestore Data Sync
   useEffect(() => {
-    localStorage.setItem('swift_storage', JSON.stringify(appState));
+    if (!currentUser) return;
 
-    if (!isFirebaseBackendConfigured || backendStatus === 'loading') return;
+    setIsLoadingSettings(true);
+    const userDocRef = doc(db, 'swift_users', currentUser.uid);
 
-    const syncTimer = window.setTimeout(() => {
-      saveRemoteState(appState)
-        .then(() => setBackendStatus('synced'))
-        .catch((error) => {
-          console.error('Failed to save Firebase state', error);
-          setBackendStatus('error');
-        });
-    }, 500);
+    const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setAppState(prev => ({
+          ...prev,
+          settings: data.settings || DEFAULT_SETTINGS,
+          templateId: data.templateId || 'modern'
+        }));
+      } else {
+        // Init user doc with default settings
+        setDoc(userDocRef, {
+          settings: DEFAULT_SETTINGS,
+          templateId: 'modern'
+        }).catch(err => handleFirestoreError(err, OperationType.WRITE, `swift_users/${currentUser.uid}`));
+      }
+      setIsLoadingSettings(false);
+    }, (err) => {
+      handleFirestoreError(err, OperationType.GET, `swift_users/${currentUser.uid}`);
+      setIsLoadingSettings(false);
+    });
 
-    return () => window.clearTimeout(syncTimer);
-  }, [appState, backendStatus]);
+    return unsubscribe;
+  }, [currentUser]);
 
-  const getBackendStatusContent = () => {
-    switch (backendStatus) {
-      case 'loading':
-        return {
-          icon: <Loader2 className="w-3.5 h-3.5 animate-spin" />,
-          label: 'Connecting Firebase',
-          className: 'text-amber-700 bg-amber-50 border-amber-200',
-        };
-      case 'synced':
-        return {
-          icon: <Cloud className="w-3.5 h-3.5" />,
-          label: 'Firebase synced',
-          className: 'text-emerald-700 bg-emerald-50 border-emerald-200',
-        };
-      case 'error':
-        return {
-          icon: <CloudOff className="w-3.5 h-3.5" />,
-          label: 'Firebase offline',
-          className: 'text-red-700 bg-red-50 border-red-200',
-        };
-      default:
-        return {
-          icon: <CloudOff className="w-3.5 h-3.5" />,
-          label: 'Local mode',
-          className: 'text-gray-600 bg-gray-50 border-gray-200',
-        };
+  const updateSettings = async (settings: CompanySettings) => {
+    if (!currentUser) return;
+    try {
+      await setDoc(doc(db, 'swift_users', currentUser.uid), {
+        settings,
+        templateId: appState.templateId
+      }, { merge: true });
+      setAppState(prev => ({ ...prev, settings }));
+      toast.success('Settings saved to cloud');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, `swift_users/${currentUser.uid}`);
     }
   };
 
-  const backendStatusContent = getBackendStatusContent();
-
-  const updateSettings = (settings: CompanySettings) => {
-    setAppState(prev => ({ ...prev, settings }));
-  };
-
-  const updateTemplate = (templateId: TemplateId) => {
-    setAppState(prev => ({ ...prev, templateId }));
+  const updateTemplate = async (templateId: TemplateId) => {
+    if (!currentUser) return;
+    try {
+      await setDoc(doc(db, 'swift_users', currentUser.uid), {
+        templateId
+      }, { merge: true });
+      setAppState(prev => ({ ...prev, templateId }));
+      toast.success('Template updated');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, `swift_users/${currentUser.uid}`);
+    }
   };
 
   const addInvoices = (newInvoices: InvoiceData[]) => {
@@ -162,21 +144,43 @@ export default function App() {
       return { ...inv, invoiceNumber };
     });
 
+    const newSettings = {
+      ...appState.settings,
+      nextInvoiceNumber: nextNum
+    };
+
     setAppState(prev => ({ 
       ...prev, 
-      invoices: [...numberedInvoices, ...prev.invoices],
-      settings: {
-        ...prev.settings,
-        nextInvoiceNumber: nextNum
-      }
+      invoices: [...numberedInvoices, ...prev.invoices]
     }));
+
+    // Persist next invoice number increment
+    updateSettings(newSettings);
   };
 
   const clearInvoices = () => {
     if (confirm('Are you sure you want to clear all invoices?')) {
       setAppState(prev => ({ ...prev, invoices: [] }));
+      toast.info('Invoice list cleared locally');
     }
   };
+
+  const handleLogout = () => {
+    signOut(auth);
+    toast.info('Signed out');
+  };
+
+  if (isAuthLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-white">
+        <Loader2 className="w-8 h-8 animate-spin text-black" />
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return <Auth />;
+  }
 
   return (
     <div className="flex h-screen bg-[#F8F9FA] text-[#1A1A1A] font-sans overflow-hidden">
@@ -186,7 +190,7 @@ export default function App() {
           <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
             <Briefcase className="text-white w-5 h-5" />
           </div>
-          <span className="font-bold text-lg tracking-tight">Swift</span>
+          <span className="font-bold text-lg tracking-tight">Swift Invo</span>
         </div>
         
         <nav className="flex-1 px-4 space-y-1">
@@ -222,6 +226,21 @@ export default function App() {
         </nav>
 
         <div className="p-4 mt-auto border-t">
+          <div className="flex items-center gap-3 mb-6 px-2">
+            <div className="w-8 h-8 rounded-full bg-black/5 flex items-center justify-center text-xs font-bold ring-1 ring-black/10">
+              {currentUser.email?.charAt(0).toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold truncate">{currentUser.email}</p>
+              <button 
+                onClick={handleLogout}
+                className="text-[10px] text-gray-500 hover:text-red-600 flex items-center gap-1 transition-colors outline-none"
+              >
+                <LogOut className="w-3 h-3" />
+                Sign Out
+              </button>
+            </div>
+          </div>
           <Card className="p-4 bg-[#F3F4F6] border-none">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Current Template</p>
             <div className="flex items-center gap-2">
@@ -249,10 +268,7 @@ export default function App() {
           </div>
           
           <div className="flex items-center gap-4">
-             <div className={`hidden sm:flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${backendStatusContent.className}`}>
-               {backendStatusContent.icon}
-               {backendStatusContent.label}
-             </div>
+             {isLoadingSettings && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
              <Button variant="outline" size="sm" className="hidden sm:flex rounded-full">
                Help
              </Button>
@@ -275,8 +291,8 @@ export default function App() {
                     <p className="text-gray-500 mt-1">Manage and download your generated receipts.</p>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" onClick={clearInvoices}>Clear All</Button>
-                    <Button className="bg-black text-white hover:bg-black/90">
+                    <Button variant="outline" onClick={clearInvoices} className="rounded-full">Clear All</Button>
+                    <Button className="bg-black text-white hover:bg-black/90 rounded-full">
                       <Download className="w-4 h-4 mr-2" />
                       Export CSV
                     </Button>

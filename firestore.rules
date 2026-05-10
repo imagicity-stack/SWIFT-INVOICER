@@ -1,0 +1,59 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // --- User Profile Validation ---
+    function isValidSwiftUser(data) {
+      return data.keys().hasAll(['settings', 'templateId'])
+        && data.settings is map
+        && data.templateId is string
+        && data.templateId.size() <= 32
+        && isValidSettings(data.settings);
+    }
+
+    function isValidSettings(s) {
+      return s.name is string && s.name.size() <= 100
+        && s.email is string && s.email.size() <= 100
+        && s.address is string && s.address.size() <= 500
+        && s.phone is string && s.phone.size() <= 50
+        && (s.logoUrl == null || (s.logoUrl is string && s.logoUrl.size() <= 500))
+        && s.taxNumber is string && s.taxNumber.size() <= 50
+        && s.aboutSection is string && s.aboutSection.size() <= 1000
+        && s.bankName is string && s.bankName.size() <= 100
+        && s.accountNumber is string && s.accountNumber.size() <= 100
+        && s.defaultTaxRate is number && s.defaultTaxRate >= 0 && s.defaultTaxRate <= 100
+        && s.currency is string && s.currency.size() <= 10
+        && s.nextInvoiceNumber is int && s.nextInvoiceNumber >= 0
+        && s.invoicePrefix is string && s.invoicePrefix.size() <= 20;
+    }
+
+    // --- Collection Rules ---
+
+    match /swift_users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidSwiftUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidSwiftUser(request.resource.data)
+        && (
+          // Allow full updates to settings and template
+          request.resource.data.diff(resource.data).affectedKeys().hasAny(['settings', 'templateId'])
+        );
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Stores user-specific company settings and preferences for Swift",
+      "type": "object",
+      "properties": {
+        "settings": { "type": "object" },
+        "templateId": { "type": "string" }
+      },
+      "required": ["settings", "templateId"]
+    }
+  },
+  "firestore": {
+    "/swift_users/{userId}": {
+      "schema": "User",
+      "description": "Main user settings document for the Swift application"
+    }
+  }
+}
