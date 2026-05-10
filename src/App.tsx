@@ -16,7 +16,10 @@ import {
   Layers,
   Search,
   PanelLeft,
-  Briefcase
+  Briefcase,
+  Cloud,
+  CloudOff,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -24,6 +27,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Toaster } from '@/components/ui/sonner';
 import { CompanySettings, InvoiceData, AppState, TemplateId } from './types';
+import { isFirebaseBackendConfigured, loadRemoteState, saveRemoteState } from './lib/api';
+import { toast } from 'sonner';
 import SettingsForm from './components/SettingsForm';
 import UploadSection from './components/UploadSection';
 import InvoiceList from './components/InvoiceList';
@@ -47,6 +52,9 @@ const DEFAULT_SETTINGS: CompanySettings = {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('upload');
+  const [backendStatus, setBackendStatus] = useState<'local' | 'loading' | 'synced' | 'error'>(
+    isFirebaseBackendConfigured ? 'loading' : 'local'
+  );
   const [appState, setAppState] = useState<AppState>(() => {
     const saved = localStorage.getItem('swift_storage');
     if (saved) {
@@ -64,8 +72,77 @@ export default function App() {
   });
 
   useEffect(() => {
+    if (!isFirebaseBackendConfigured) return;
+
+    let isMounted = true;
+
+    loadRemoteState()
+      .then((remoteState) => {
+        if (!isMounted) return;
+        if (remoteState) {
+          setAppState(remoteState);
+        }
+        setBackendStatus('synced');
+      })
+      .catch((error) => {
+        console.error('Failed to load Firebase state', error);
+        if (!isMounted) return;
+        setBackendStatus('error');
+        toast.error('Firebase sync is unavailable. Continuing with local storage.');
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
     localStorage.setItem('swift_storage', JSON.stringify(appState));
-  }, [appState]);
+
+    if (!isFirebaseBackendConfigured || backendStatus === 'loading') return;
+
+    const syncTimer = window.setTimeout(() => {
+      saveRemoteState(appState)
+        .then(() => setBackendStatus('synced'))
+        .catch((error) => {
+          console.error('Failed to save Firebase state', error);
+          setBackendStatus('error');
+        });
+    }, 500);
+
+    return () => window.clearTimeout(syncTimer);
+  }, [appState, backendStatus]);
+
+  const getBackendStatusContent = () => {
+    switch (backendStatus) {
+      case 'loading':
+        return {
+          icon: <Loader2 className="w-3.5 h-3.5 animate-spin" />,
+          label: 'Connecting Firebase',
+          className: 'text-amber-700 bg-amber-50 border-amber-200',
+        };
+      case 'synced':
+        return {
+          icon: <Cloud className="w-3.5 h-3.5" />,
+          label: 'Firebase synced',
+          className: 'text-emerald-700 bg-emerald-50 border-emerald-200',
+        };
+      case 'error':
+        return {
+          icon: <CloudOff className="w-3.5 h-3.5" />,
+          label: 'Firebase offline',
+          className: 'text-red-700 bg-red-50 border-red-200',
+        };
+      default:
+        return {
+          icon: <CloudOff className="w-3.5 h-3.5" />,
+          label: 'Local mode',
+          className: 'text-gray-600 bg-gray-50 border-gray-200',
+        };
+    }
+  };
+
+  const backendStatusContent = getBackendStatusContent();
 
   const updateSettings = (settings: CompanySettings) => {
     setAppState(prev => ({ ...prev, settings }));
@@ -172,6 +249,10 @@ export default function App() {
           </div>
           
           <div className="flex items-center gap-4">
+             <div className={`hidden sm:flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${backendStatusContent.className}`}>
+               {backendStatusContent.icon}
+               {backendStatusContent.label}
+             </div>
              <Button variant="outline" size="sm" className="hidden sm:flex rounded-full">
                Help
              </Button>
