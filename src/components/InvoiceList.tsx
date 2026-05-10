@@ -82,14 +82,14 @@ export default function InvoiceList({
         setSelectedInvoice(invoice);
         
         // Wait for React to render and a tiny bit more for layout/images
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         const blob = await getPDFBlob(`invoice-${invoice.id}`);
         zip.file(`${invoice.invoiceNumber}_${invoice.customerName.replace(/[^a-z0-9]/gi, '_')}.pdf`, blob);
         
         // Clear selected invoice to free up element space if needed
         setSelectedInvoice(null);
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
       
       const content = await zip.generateAsync({ type: 'blob' });
@@ -279,7 +279,7 @@ export default function InvoiceList({
       </div>
 
       {/* Hidden container for background generation */}
-      <div className="fixed -left-[2000px] top-0 opacity-0 pointer-events-none">
+      <div className="fixed -left-[5000px] top-0 pointer-events-none opacity-0">
         {selectedInvoice && (
           <InvoiceTemplate 
             invoice={selectedInvoice} 

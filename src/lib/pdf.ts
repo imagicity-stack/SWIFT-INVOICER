@@ -16,6 +16,10 @@ export const generatePDF = async (elementId: string, filename: string) => {
       pixelRatio: 1.5,
     });
 
+    if (!dataUrl || dataUrl.length < 100) {
+      throw new Error('Generated image is invalid');
+    }
+
     const pdf = new jsPDF({
       orientation: 'p',
       unit: 'mm',
@@ -23,7 +27,13 @@ export const generatePDF = async (elementId: string, filename: string) => {
       compress: true
     });
     const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (element.offsetHeight * pdfWidth) / element.offsetWidth;
+    const elementWidth = element.offsetWidth || 1;
+    const elementHeight = element.offsetHeight || 1;
+    let pdfHeight = (elementHeight * pdfWidth) / elementWidth;
+    
+    if (!isFinite(pdfHeight) || pdfHeight <= 0) {
+      pdfHeight = 297; 
+    }
 
     pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
     pdf.save(filename);
@@ -43,6 +53,10 @@ export const getPDFBlob = async (elementId: string): Promise<Blob> => {
       pixelRatio: 1.2,
     });
 
+    if (!dataUrl || dataUrl.length < 100) {
+      throw new Error('Generated image is invalid');
+    }
+
     const pdf = new jsPDF({
       orientation: 'p',
       unit: 'mm',
@@ -50,7 +64,13 @@ export const getPDFBlob = async (elementId: string): Promise<Blob> => {
       compress: true
     });
     const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (element.offsetHeight * pdfWidth) / element.offsetWidth;
+    const elementWidth = element.offsetWidth || 1;
+    const elementHeight = element.offsetHeight || 1;
+    let pdfHeight = (elementHeight * pdfWidth) / elementWidth;
+    
+    if (!isFinite(pdfHeight) || pdfHeight <= 0) {
+      pdfHeight = 297; 
+    }
 
     pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
     return pdf.output('blob');
