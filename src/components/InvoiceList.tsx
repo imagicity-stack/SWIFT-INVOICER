@@ -109,10 +109,17 @@ export default function InvoiceList({ invoices, settings, templateId, onDeleteIn
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2 pr-4 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Dialog>
-                    <DialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setSelectedInvoice(invoice)}>
-                        <Eye className="w-4 h-4" />
-                      </Button>
+                    <DialogTrigger 
+                      render={
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="rounded-full" 
+                          onClick={() => setSelectedInvoice(invoice)}
+                        />
+                      }
+                    >
+                      <Eye className="w-4 h-4" />
                     </DialogTrigger>
                     <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0">
                       <DialogHeader className="p-6 border-b">
