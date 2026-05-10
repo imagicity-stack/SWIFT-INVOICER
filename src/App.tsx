@@ -378,7 +378,6 @@ export default function App() {
                     <p className="text-gray-500 mt-1">Manage and download your generated receipts.</p>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" onClick={clearInvoices} className="rounded-full">Clear All</Button>
                     <Button className="bg-black text-white hover:bg-black/90 rounded-full">
                       <Download className="w-4 h-4 mr-2" />
                       Export CSV
@@ -390,6 +389,7 @@ export default function App() {
                   settings={appState.settings}
                   templateId={appState.templateId}
                   onDeleteInvoice={removeInvoice}
+                  onDeleteAllInvoices={clearInvoices}
                 />
               </div>
             )}

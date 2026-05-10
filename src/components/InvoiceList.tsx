@@ -33,9 +33,16 @@ interface InvoiceListProps {
   settings: CompanySettings;
   templateId: TemplateId;
   onDeleteInvoice?: (id: string) => void;
+  onDeleteAllInvoices?: () => void;
 }
 
-export default function InvoiceList({ invoices, settings, templateId, onDeleteInvoice }: InvoiceListProps) {
+export default function InvoiceList({ 
+  invoices, 
+  settings, 
+  templateId, 
+  onDeleteInvoice,
+  onDeleteAllInvoices 
+}: InvoiceListProps) {
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceData | null>(null);
   const [isDownloading, setIsDownloading] = useState<string | null>(null);
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
@@ -122,13 +129,23 @@ export default function InvoiceList({ invoices, settings, templateId, onDeleteIn
             {invoices.length}
           </span>
         </h2>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="rounded-full gap-2 border-black/10 hover:bg-black hover:text-white transition-colors"
-          onClick={handleDownloadAll}
-          disabled={isDownloadingAll}
-        >
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="rounded-full gap-2 border-red-100 text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+            onClick={onDeleteAllInvoices}
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete All
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="rounded-full gap-2 border-black/10 hover:bg-black hover:text-white transition-colors"
+            onClick={handleDownloadAll}
+            disabled={isDownloadingAll}
+          >
           {isDownloadingAll ? (
             <>
               <span className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
@@ -142,8 +159,9 @@ export default function InvoiceList({ invoices, settings, templateId, onDeleteIn
           )}
         </Button>
       </div>
+    </div>
       
-      <div className="bg-white rounded-3xl border border-[#E5E7EB] overflow-hidden shadow-sm">
+    <div className="bg-white rounded-3xl border border-[#E5E7EB] overflow-hidden shadow-sm">
       <Table>
         <TableHeader className="bg-gray-50/50">
           <TableRow className="hover:bg-transparent border-none">
