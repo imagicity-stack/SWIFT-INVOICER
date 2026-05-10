@@ -86,6 +86,10 @@ export default function InvoiceList({
         
         const blob = await getPDFBlob(`invoice-${invoice.id}`);
         zip.file(`${invoice.invoiceNumber}_${invoice.customerName.replace(/[^a-z0-9]/gi, '_')}.pdf`, blob);
+        
+        // Clear selected invoice to free up element space if needed
+        setSelectedInvoice(null);
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
       
       const content = await zip.generateAsync({ type: 'blob' });

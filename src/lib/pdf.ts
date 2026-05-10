@@ -12,11 +12,16 @@ export const generatePDF = async (elementId: string, filename: string) => {
 
   try {
     const dataUrl = await toPng(element, {
-      quality: 0.95,
-      pixelRatio: 2,
+      quality: 0.8,
+      pixelRatio: 1.5,
     });
 
-    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdf = new jsPDF({
+      orientation: 'p',
+      unit: 'mm',
+      format: 'a4',
+      compress: true
+    });
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = (element.offsetHeight * pdfWidth) / element.offsetWidth;
 
@@ -34,11 +39,16 @@ export const getPDFBlob = async (elementId: string): Promise<Blob> => {
 
   try {
     const dataUrl = await toPng(element, {
-      quality: 0.95,
-      pixelRatio: 2,
+      quality: 0.75,
+      pixelRatio: 1.2,
     });
 
-    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdf = new jsPDF({
+      orientation: 'p',
+      unit: 'mm',
+      format: 'a4',
+      compress: true
+    });
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = (element.offsetHeight * pdfWidth) / element.offsetWidth;
 
