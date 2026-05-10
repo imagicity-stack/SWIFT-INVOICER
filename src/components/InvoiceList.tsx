@@ -21,7 +21,7 @@ import {
   DialogTrigger,
   DialogFooter
 } from '@/components/ui/dialog';
-import { Download, Eye, MoreHorizontal, CheckCircle2 } from 'lucide-react';
+import { Download, Eye, MoreHorizontal, CheckCircle2, Trash2 } from 'lucide-react';
 import { CompanySettings, InvoiceData, TemplateId } from '../types';
 import { formatCurrency, calculateTotal, generatePDF } from '../lib/pdf';
 import InvoiceTemplate from './InvoiceTemplate';
@@ -31,9 +31,10 @@ interface InvoiceListProps {
   invoices: InvoiceData[];
   settings: CompanySettings;
   templateId: TemplateId;
+  onDeleteInvoice?: (id: string) => void;
 }
 
-export default function InvoiceList({ invoices, settings, templateId }: InvoiceListProps) {
+export default function InvoiceList({ invoices, settings, templateId, onDeleteInvoice }: InvoiceListProps) {
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceData | null>(null);
   const [isDownloading, setIsDownloading] = useState<string | null>(null);
 
@@ -148,6 +149,15 @@ export default function InvoiceList({ invoices, settings, templateId }: InvoiceL
                     onClick={() => handleDownload(invoice)}
                   >
                     <Download className={`w-4 h-4 ${isDownloading === invoice.id ? 'animate-pulse' : ''}`} />
+                  </Button>
+
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50"
+                    onClick={() => onDeleteInvoice?.(invoice.id)}
+                  >
+                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               </TableCell>

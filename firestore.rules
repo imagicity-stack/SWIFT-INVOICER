@@ -54,6 +54,12 @@ service cloud.firestore {
           // Allow full updates to settings and template
           request.resource.data.diff(resource.data).affectedKeys().hasAny(['settings', 'templateId'])
         );
+
+      match /invoices/{invoiceId} {
+        allow list, get: if isOwner(userId);
+        allow create: if isOwner(userId);
+        allow delete: if isOwner(userId);
+      }
     }
   }
 }

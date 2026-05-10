@@ -20,8 +20,24 @@ import {
   LogOut,
   Loader2
 } from 'lucide-react';
-import { onAuthStateChanged, signOut, User } from 'firebase/auth';
-import { doc, setDoc, onSnapshot } from 'firebase/firestore';
+import { 
+  onAuthStateChanged, 
+  signOut, 
+  User 
+} from 'firebase/auth';
+import { 
+  doc, 
+  setDoc, 
+  onSnapshot, 
+  collection, 
+  query, 
+  orderBy, 
+  addDoc, 
+  serverTimestamp,
+  deleteDoc,
+  getDocs,
+  writeBatch
+} from 'firebase/firestore';
 import { auth, db, handleFirestoreError, OperationType } from './lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -76,7 +92,7 @@ export default function App() {
     return unsubscribe;
   }, []);
 
-  // Handle Firestore Data Sync
+  // Handle Firestore Data Sync (User Settings)
   useEffect(() => {
     if (!currentUser) return;
 
@@ -102,6 +118,30 @@ export default function App() {
     }, (err) => {
       handleFirestoreError(err, OperationType.GET, `swift_users/${currentUser.uid}`);
       setIsLoadingSettings(false);
+    });
+
+    return unsubscribe;
+  }, [currentUser]);
+
+  // Handle Firestore Data Sync (Invoices)
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const invoicesCol = collection(db, 'swift_users', currentUser.uid, 'invoices');
+    const q = query(invoicesCol, orderBy('createdAt', 'desc'));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const invoices = snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      })) as InvoiceData[];
+      
+      setAppState(prev => ({
+        ...prev,
+        invoices
+      }));
+    }, (err) => {
+      handleFirestoreError(err, OperationType.GET, `swift_users/${currentUser.uid}/invoices`);
     });
 
     return unsubscribe;
@@ -134,34 +174,79 @@ export default function App() {
     }
   };
 
-  const addInvoices = (newInvoices: InvoiceData[]) => {
+  const addInvoices = async (newInvoices: InvoiceData[]) => {
+    if (!currentUser) return;
+
     let nextNum = appState.settings.nextInvoiceNumber;
     const prefix = appState.settings.invoicePrefix || '';
     
-    const numberedInvoices = newInvoices.map(inv => {
-      const invoiceNumber = `${prefix}${nextNum}`;
-      nextNum++;
-      return { ...inv, invoiceNumber };
-    });
+    setIsLoadingSettings(true);
+    try {
+      const invoicesCol = collection(db, 'swift_users', currentUser.uid, 'invoices');
+      const batch = writeBatch(db);
 
-    const newSettings = {
-      ...appState.settings,
-      nextInvoiceNumber: nextNum
-    };
+      for (const inv of newInvoices) {
+        const invoiceNumber = `${prefix}${nextNum}`;
+        const newInvoiceData = {
+          ...inv,
+          invoiceNumber,
+          createdAt: serverTimestamp()
+        };
+        
+        const newDocRef = doc(invoicesCol);
+        batch.set(newDocRef, newInvoiceData);
+        nextNum++;
+      }
 
-    setAppState(prev => ({ 
-      ...prev, 
-      invoices: [...numberedInvoices, ...prev.invoices]
-    }));
+      // Update settings with next number
+      const userDocRef = doc(db, 'swift_users', currentUser.uid);
+      const newSettings = {
+        ...appState.settings,
+        nextInvoiceNumber: nextNum
+      };
+      batch.update(userDocRef, { settings: newSettings });
 
-    // Persist next invoice number increment
-    updateSettings(newSettings);
+      await batch.commit();
+      setAppState(prev => ({ ...prev, settings: newSettings }));
+      toast.success(`Successfully generated ${newInvoices.length} invoices`);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, `swift_users/${currentUser.uid}/invoices`);
+    } finally {
+      setIsLoadingSettings(false);
+    }
   };
 
-  const clearInvoices = () => {
-    if (confirm('Are you sure you want to clear all invoices?')) {
-      setAppState(prev => ({ ...prev, invoices: [] }));
-      toast.info('Invoice list cleared locally');
+  const clearInvoices = async () => {
+    if (!currentUser) return;
+    if (confirm('Are you sure you want to clear all invoices from the cloud?')) {
+      setIsLoadingSettings(true);
+      try {
+        const invoicesCol = collection(db, 'swift_users', currentUser.uid, 'invoices');
+        const snapshot = await getDocs(invoicesCol);
+        
+        const batch = writeBatch(db);
+        snapshot.docs.forEach((doc) => {
+          batch.delete(doc.ref);
+        });
+        
+        await batch.commit();
+        toast.info('Invoice list cleared from cloud');
+      } catch (err) {
+        handleFirestoreError(err, OperationType.DELETE, `swift_users/${currentUser.uid}/invoices`);
+      } finally {
+        setIsLoadingSettings(false);
+      }
+    }
+  };
+
+  const removeInvoice = async (invoiceId: string) => {
+    if (!currentUser) return;
+    try {
+      const docRef = doc(db, 'swift_users', currentUser.uid, 'invoices', invoiceId);
+      await deleteDoc(docRef);
+      toast.info('Invoice deleted');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `swift_users/${currentUser.uid}/invoices/${invoiceId}`);
     }
   };
 
@@ -302,6 +387,7 @@ export default function App() {
                   invoices={appState.invoices} 
                   settings={appState.settings}
                   templateId={appState.templateId}
+                  onDeleteInvoice={removeInvoice}
                 />
               </div>
             )}
