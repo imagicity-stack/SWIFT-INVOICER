@@ -1,0 +1,6 @@
+{
+  "name": "Swift",
+  "description": "Professional bulk invoice generator that transforms CSV/Excel data into PDF receipts. Features customizable templates, sequential numbering, and secure cloud storage.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
