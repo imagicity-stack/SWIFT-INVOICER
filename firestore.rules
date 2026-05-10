@@ -29,24 +29,24 @@ service cloud.firestore {
     }
 
     function isValidSettings(s) {
-      return s.name is string && s.name.size() <= 100
-        && s.email is string && s.email.size() <= 100
-        && s.address is string && s.address.size() <= 1000
-        && s.phone is string && s.phone.size() <= 50
-        && (s.logoUrl == null || (s.logoUrl is string && s.logoUrl.size() <= 500))
-        && s.gstNumber is string && s.gstNumber.size() <= 20
-        && s.panNumber is string && s.panNumber.size() <= 20
-        && s.state is string && s.state.size() <= 50
-        && s.addressStateCode is string && s.addressStateCode.size() <= 10
-        && s.aboutSection is string && s.aboutSection.size() <= 1000
-        && s.bankName is string && s.bankName.size() <= 100
-        && s.accountNumber is string && s.accountNumber.size() <= 100
-        && s.ifscCode is string && s.ifscCode.size() <= 20
-        && s.branchName is string && s.branchName.size() <= 100
-        && s.defaultTaxRate is number && s.defaultTaxRate >= 0 && s.defaultTaxRate <= 100
-        && s.currency is string && s.currency.size() <= 50
-        && s.nextInvoiceNumber is int && s.nextInvoiceNumber >= 0
-        && s.invoicePrefix is string && s.invoicePrefix.size() <= 20;
+      return s.get('name', '') is string && s.get('name', '').size() <= 100
+        && s.get('email', '') is string && s.get('email', '').size() <= 100
+        && s.get('address', '') is string && s.get('address', '').size() <= 1000
+        && s.get('phone', '') is string && s.get('phone', '').size() <= 50
+        && (s.get('logoUrl', null) == null || (s.get('logoUrl', '') is string && s.get('logoUrl', '').size() <= 500))
+        && s.get('gstNumber', '') is string && s.get('gstNumber', '').size() <= 20
+        && s.get('panNumber', '') is string && s.get('panNumber', '').size() <= 20
+        && s.get('state', '') is string && s.get('state', '').size() <= 50
+        && s.get('addressStateCode', '') is string && s.get('addressStateCode', '').size() <= 10
+        && s.get('aboutSection', '') is string && s.get('aboutSection', '').size() <= 1000
+        && s.get('bankName', '') is string && s.get('bankName', '').size() <= 100
+        && s.get('accountNumber', '') is string && s.get('accountNumber', '').size() <= 100
+        && s.get('ifscCode', '') is string && s.get('ifscCode', '').size() <= 20
+        && s.get('branchName', '') is string && s.get('branchName', '').size() <= 100
+        && s.get('defaultTaxRate', 0) is number && s.get('defaultTaxRate', 0) >= 0 && s.get('defaultTaxRate', 0) <= 100
+        && s.get('currency', '') is string && s.get('currency', '').size() <= 50
+        && s.get('nextInvoiceNumber', 0) is int && s.get('nextInvoiceNumber', 0) >= 0
+        && s.get('invoicePrefix', '') is string && s.get('invoicePrefix', '').size() <= 20;
     }
 
     // --- Collection Rules ---

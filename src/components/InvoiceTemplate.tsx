@@ -187,6 +187,11 @@ export default function InvoiceTemplate({ invoice, settings, templateId }: Invoi
             </div>
           </div>
         </div>
+        <div className="mt-8 pt-4 border-t border-gray-100 text-center">
+          <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">
+            This is a computer generated invoice and does not require a physical signature.
+          </p>
+        </div>
       </div>
     );
   }
@@ -273,6 +278,11 @@ export default function InvoiceTemplate({ invoice, settings, templateId }: Invoi
           <div className="text-right opacity-40 text-[9px]">
             <p className="italic">"{settings.aboutSection}"</p>
           </div>
+        </div>
+        <div className="mt-10 pt-4 border-t border-black/5 text-center opacity-30">
+          <p className="text-[8px] font-bold uppercase tracking-widest">
+            Computer Generated // No Signature Required
+          </p>
         </div>
       </div>
     );
@@ -372,6 +382,9 @@ export default function InvoiceTemplate({ invoice, settings, templateId }: Invoi
                 </div>
              </div>
           </div>
+        </div>
+        <div className="bg-black text-white py-2 text-center">
+          <p className="text-[9px] font-black uppercase tracking-[0.4em]">SYSTEM GENERATED // NO SIGNATURE REQUIRED</p>
         </div>
       </div>
     );
@@ -492,6 +505,11 @@ export default function InvoiceTemplate({ invoice, settings, templateId }: Invoi
               <span className="text-3xl font-black">{formatCurrency(total, settings.currency)}</span>
             </div>
           </div>
+        </div>
+        <div className="mt-auto pt-8 text-center border-t-2 border-black/5">
+          <p className="text-[9px] font-bold uppercase tracking-[0.2em] opacity-40">
+            This is a computer generated invoice and does not require a physical signature.
+          </p>
         </div>
       </div>
     </div>

@@ -42,7 +42,6 @@ import { auth, db, handleFirestoreError, OperationType } from './lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Toaster } from '@/components/ui/sonner';
 import { CompanySettings, InvoiceData, AppState, TemplateId } from './types';
 import SettingsForm from './components/SettingsForm';
@@ -281,7 +280,7 @@ export default function App() {
           <span className="font-bold text-lg tracking-tight">Swift Invo</span>
         </div>
         
-        <nav className="flex-1 px-4 space-y-1">
+        <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
           <Button 
             variant={activeTab === 'upload' ? 'secondary' : 'ghost'} 
             className="w-full justify-start gap-3 h-11 px-4"
@@ -365,7 +364,7 @@ export default function App() {
         </header>
 
         {/* Scrollable Area */}
-        <ScrollArea className="flex-1">
+        <div className="flex-1 overflow-y-auto">
           <div className="p-8 max-w-6xl mx-auto space-y-8">
             {activeTab === 'upload' && (
               <UploadSection onUploadComplete={addInvoices} />
@@ -410,7 +409,7 @@ export default function App() {
               </div>
             )}
           </div>
-        </ScrollArea>
+        </div>
       </main>
       <Toaster position="bottom-right" />
     </div>
