@@ -28,6 +28,28 @@ export const generatePDF = async (elementId: string, filename: string) => {
   }
 };
 
+export const getPDFBlob = async (elementId: string): Promise<Blob> => {
+  const element = document.getElementById(elementId);
+  if (!element) throw new Error('Element not found');
+
+  try {
+    const dataUrl = await toPng(element, {
+      quality: 0.95,
+      pixelRatio: 2,
+    });
+
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (element.offsetHeight * pdfWidth) / element.offsetWidth;
+
+    pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    return pdf.output('blob');
+  } catch (error) {
+    console.error('Error generating PDF Blob:', error);
+    throw error;
+  }
+};
+
 export const formatCurrency = (amount: number, currency: string = 'INR') => {
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',

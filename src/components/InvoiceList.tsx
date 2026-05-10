@@ -21,11 +21,12 @@ import {
   DialogTrigger,
   DialogFooter
 } from '@/components/ui/dialog';
-import { Download, Eye, MoreHorizontal, CheckCircle2, Trash2 } from 'lucide-react';
+import { Download, Eye, MoreHorizontal, CheckCircle2, Trash2, Files } from 'lucide-react';
 import { CompanySettings, InvoiceData, TemplateId } from '../types';
-import { formatCurrency, calculateTotal, generatePDF } from '../lib/pdf';
+import { formatCurrency, calculateTotal, generatePDF, getPDFBlob } from '../lib/pdf';
 import InvoiceTemplate from './InvoiceTemplate';
 import { toast } from 'sonner';
+import JSZip from 'jszip';
 
 interface InvoiceListProps {
   invoices: InvoiceData[];
@@ -37,6 +38,8 @@ interface InvoiceListProps {
 export default function InvoiceList({ invoices, settings, templateId, onDeleteInvoice }: InvoiceListProps) {
   const [selectedInvoice, setSelectedInvoice] = useState<InvoiceData | null>(null);
   const [isDownloading, setIsDownloading] = useState<string | null>(null);
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState({ current: 0, total: 0 });
 
   const handleDownload = async (invoice: InvoiceData) => {
     setIsDownloading(invoice.id);
@@ -56,6 +59,48 @@ export default function InvoiceList({ invoices, settings, templateId, onDeleteIn
     }, 500);
   };
 
+  const handleDownloadAll = async () => {
+    if (invoices.length === 0) return;
+    
+    setIsDownloadingAll(true);
+    setDownloadProgress({ current: 0, total: invoices.length });
+    const zip = new JSZip();
+    
+    try {
+      for (let i = 0; i < invoices.length; i++) {
+        const invoice = invoices[i];
+        setDownloadProgress({ current: i + 1, total: invoices.length });
+        
+        // Update selected invoice for rendering in hidden container
+        setSelectedInvoice(invoice);
+        
+        // Wait for React to render and a tiny bit more for layout/images
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        const blob = await getPDFBlob(`invoice-${invoice.id}`);
+        zip.file(`${invoice.invoiceNumber}_${invoice.customerName.replace(/[^a-z0-9]/gi, '_')}.pdf`, blob);
+      }
+      
+      const content = await zip.generateAsync({ type: 'blob' });
+      const url = window.URL.createObjectURL(content);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `invoices_${new Date().toISOString().split('T')[0]}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('All invoices downloaded as ZIP!');
+    } catch (err) {
+      toast.error('Failed to generate ZIP.');
+      console.error(err);
+    } finally {
+      setIsDownloadingAll(false);
+      setDownloadProgress({ current: 0, total: 0 });
+    }
+  };
+
   if (invoices.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">
@@ -69,7 +114,36 @@ export default function InvoiceList({ invoices, settings, templateId, onDeleteIn
   }
 
   return (
-    <div className="bg-white rounded-3xl border border-[#E5E7EB] overflow-hidden shadow-sm">
+    <div className="space-y-4">
+      <div className="flex justify-between items-center px-2">
+        <h2 className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
+          Invoice History
+          <span className="text-xs font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+            {invoices.length}
+          </span>
+        </h2>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="rounded-full gap-2 border-black/10 hover:bg-black hover:text-white transition-colors"
+          onClick={handleDownloadAll}
+          disabled={isDownloadingAll}
+        >
+          {isDownloadingAll ? (
+            <>
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
+              Processing ({downloadProgress.current}/{downloadProgress.total})
+            </>
+          ) : (
+            <>
+              <Files className="w-4 h-4" />
+              Download All (ZIP)
+            </>
+          )}
+        </Button>
+      </div>
+      
+      <div className="bg-white rounded-3xl border border-[#E5E7EB] overflow-hidden shadow-sm">
       <Table>
         <TableHeader className="bg-gray-50/50">
           <TableRow className="hover:bg-transparent border-none">
@@ -180,6 +254,7 @@ export default function InvoiceList({ invoices, settings, templateId, onDeleteIn
           ))}
         </TableBody>
       </Table>
+      </div>
 
       {/* Hidden container for background generation */}
       <div className="fixed -left-[2000px] top-0 opacity-0 pointer-events-none">
