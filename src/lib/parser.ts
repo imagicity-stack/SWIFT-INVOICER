@@ -39,7 +39,13 @@ const processRawData = (data: any[]): InvoiceData[] => {
   data.forEach((row, index) => {
     // Generate a group ID if not provided (assume same customer/date rows belong together)
     const customerKey = row.name || row.customer_name || row.Customer || row.Party;
-    const dateKey = row.date || row.Date || new Date().toISOString().split('T')[0];
+    const today = new Date();
+    const day = String(today.getDate()).padStart(2, '0');
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const year = today.getFullYear();
+    const fallbackDate = `${day}-${month}-${year}`;
+
+    const dateKey = row.date || row.Date || fallbackDate;
     const groupId = row.invoice_id || row.id || `${customerKey}-${dateKey}`;
 
     if (!invoicesMap.has(groupId)) {

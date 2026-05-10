@@ -67,9 +67,9 @@ export default function UploadSection({ onUploadComplete }: UploadSectionProps) 
   const downloadSample = (e: React.MouseEvent) => {
     e.stopPropagation();
     const headers = 'name,address,gstin,item,quantity,price,hsn,date,notes\n';
-    const row1 = 'Acme Corp,"123 Business Way, Mumbai",27AAAAA0000A1Z5,Laptop,1,55000,8471,2024-05-10,Standard Warranty\n';
-    const row2 = 'Acme Corp,"123 Business Way, Mumbai",27AAAAA0000A1Z5,Mouse,2,500,8471,2024-05-10,\n';
-    const row3 = 'Globex Corp,"456 Industrial Blvd, Delhi",07BBBBB1111B2Z6,Consulting,10,2500,9983,2024-05-12,Hourly billing\n';
+    const row1 = 'Acme Corp,"123 Business Way, Mumbai",27AAAAA0000A1Z5,Laptop,1,55000,8471,10-05-2024,Standard Warranty\n';
+    const row2 = 'Acme Corp,"123 Business Way, Mumbai",27AAAAA0000A1Z5,Mouse,2,500,8471,10-05-2024,\n';
+    const row3 = 'Globex Corp,"456 Industrial Blvd, Delhi",07BBBBB1111B2Z6,Consulting,10,2500,9983,12-05-2024,Hourly billing\n';
     
     const blob = new Blob([headers + row1 + row2 + row3], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -165,7 +165,7 @@ export default function UploadSection({ onUploadComplete }: UploadSectionProps) 
             <AlertCircle className="w-5 h-5" />
           </div>
           <h3 className="font-bold">Column Hints</h3>
-          <p className="text-sm text-gray-500 italic">Required: name, address, item, quantity, price, hsn. Optional: date, gstin, notes.</p>
+          <p className="text-sm text-gray-500 italic">Required: name, address, item, quantity, price, hsn. Optional: date (DD-MM-YYYY), gstin, notes.</p>
         </div>
       </div>
     </div>
