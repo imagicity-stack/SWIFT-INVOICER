@@ -26,11 +26,65 @@ export const parseCSV = (file: File): Promise<InvoiceData[]> => {
 
 export const parseExcel = async (file: File): Promise<InvoiceData[]> => {
   const buffer = await file.arrayBuffer();
-  const workbook = XLSX.read(buffer);
+  const workbook = XLSX.read(buffer, { cellDates: true });
   const firstSheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[firstSheetName];
   const data = XLSX.utils.sheet_to_json(worksheet) as any[];
   return processRawData(data);
+};
+
+const formatDate = (date: any): string => {
+  if (!date) return '';
+
+  // Handle Date objects (from XLSX cellDates: true or manual creation)
+  if (date instanceof Date) {
+    if (isNaN(date.getTime())) return '';
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  }
+
+  // Handle Excel serial numbers
+  if (typeof date === 'number') {
+    const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+    const d = new Date(excelEpoch.getTime() + date * 86400000);
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const year = d.getUTCFullYear();
+    return `${day}-${month}-${year}`;
+  }
+
+  if (typeof date === 'string') {
+    const trimmed = date.trim();
+    if (!trimmed) return '';
+
+    // If it's already in DD-MM-YYYY or DD/MM/YYYY
+    if (trimmed.match(/^\d{2}[-\/]\d{2}[-\/]\d{4}$/)) {
+      return trimmed.replace(/\//g, '-');
+    }
+
+    // If it's YYYY-MM-DD (ISO), convert to DD-MM-YYYY
+    const isoMatch = trimmed.match(/^(\d{4})[-\/](\d{2})[-\/](\d{2})/);
+    if (isoMatch) {
+      return `${isoMatch[3]}-${isoMatch[2]}-${isoMatch[1]}`;
+    }
+    
+    // Attempt to handle other formats via JS Date if possible
+    try {
+      const d = new Date(trimmed);
+      if (!isNaN(d.getTime())) {
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${day}-${month}-${year}`;
+      }
+    } catch (e) {
+      // Ignore parsing errors
+    }
+  }
+
+  return String(date);
 };
 
 const processRawData = (data: any[]): InvoiceData[] => {
@@ -45,15 +99,17 @@ const processRawData = (data: any[]): InvoiceData[] => {
     const year = today.getFullYear();
     const fallbackDate = `${day}-${month}-${year}`;
 
-    const dateKey = row.date || row.Date || fallbackDate;
-    const groupId = row.invoice_id || row.id || `${customerKey}-${dateKey}`;
+    const rawDate = row.date || row.Date || fallbackDate;
+    const formattedDate = formatDate(rawDate);
+    
+    const groupId = row.invoice_id || row.id || `${customerKey}-${formattedDate}`;
 
     if (!invoicesMap.has(groupId)) {
       invoicesMap.set(groupId, {
         id: groupId,
         invoiceNumber: row.invoice_number || '', // Will be assigned by App state
-        date: dateKey,
-        dueDate: row.due_date || row.DueDate || '',
+        date: formattedDate,
+        dueDate: formatDate(row.due_date || row.DueDate || ''),
         customerName: customerKey || 'Guest',
         customerEmail: row.email || row.customer_email || '',
         customerAddress: row.address || row.customer_address || '',
