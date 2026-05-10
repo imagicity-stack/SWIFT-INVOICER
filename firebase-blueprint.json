@@ -19,7 +19,7 @@
         "date": { "type": "string" },
         "dueDate": { "type": "string" },
         "customerName": { "type": "string" },
-        "customerEmail": { "type": "string" },
+        "customerGSTIN": { "type": "string" },
         "customerAddress": { "type": "string" },
         "items": { "type": "array" },
         "customFields": { "type": "array" },

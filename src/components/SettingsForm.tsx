@@ -39,11 +39,43 @@ const TEMPLATES = [
   { id: 'bold', name: 'Bold Accent', description: 'High contrast headers' },
 ];
 
+const INDIAN_STATES = [
+  { code: '01', name: 'Jammu & Kashmir' },
+  { code: '02', name: 'Himachal Pradesh' },
+  { code: '03', name: 'Punjab' },
+  { code: '04', name: 'Chandigarh' },
+  { code: '05', name: 'Uttarakhand' },
+  { code: '06', name: 'Haryana' },
+  { code: '07', name: 'Delhi' },
+  { code: '08', name: 'Rajasthan' },
+  { code: '09', name: 'Uttar Pradesh' },
+  { code: '10', name: 'Bihar' },
+  { code: '19', name: 'West Bengal' },
+  { code: '24', name: 'Gujarat' },
+  { code: '27', name: 'Maharashtra' },
+  { code: '29', name: 'Karnataka' },
+  { code: '32', name: 'Kerala' },
+  { code: '33', name: 'Tamil Nadu' },
+  { code: '36', name: 'Telangana' },
+  { code: '37', name: 'Andhra Pradesh' },
+];
+
 export default function SettingsForm({ initialSettings, onSave, templateId, onTemplateChange }: SettingsFormProps) {
   const [settings, setSettings] = useState<CompanySettings>(initialSettings);
 
   const handleChange = (field: keyof CompanySettings, value: string | number) => {
     setSettings(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleStateChange = (stateName: string) => {
+    const selected = INDIAN_STATES.find(s => s.name === stateName);
+    if (selected) {
+      setSettings(prev => ({ 
+        ...prev, 
+        state: selected.name, 
+        addressStateCode: selected.code 
+      }));
+    }
   };
 
   const handleSave = () => {
@@ -105,12 +137,20 @@ export default function SettingsForm({ initialSettings, onSave, templateId, onTe
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="companyPhone">Phone</Label>
-                <Input 
-                  id="companyPhone" 
-                  value={settings.phone} 
-                  onChange={(e) => handleChange('phone', e.target.value)}
-                />
+                <Label htmlFor="companyState">Business State</Label>
+                <Select 
+                  value={settings.state} 
+                  onValueChange={handleStateChange}
+                >
+                  <SelectTrigger id="companyState">
+                    <SelectValue placeholder="Select state" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {INDIAN_STATES.map(s => (
+                      <SelectItem key={s.code} value={s.name}>{s.name} ({s.code})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -121,7 +161,7 @@ export default function SettingsForm({ initialSettings, onSave, templateId, onTe
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="taxRate">Default Tax Rate (%)</Label>
+                  <Label htmlFor="taxRate">Default GST Rate (%)</Label>
                   <Input 
                     id="taxRate" 
                     type="number"
@@ -161,12 +201,22 @@ export default function SettingsForm({ initialSettings, onSave, templateId, onTe
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="taxNumber">Tax Information (VAT/Tax ID)</Label>
+              <div className="space-y-2">
+                <Label htmlFor="gstNumber">GSTIN (GST Number)</Label>
                 <Input 
-                  id="taxNumber" 
-                  value={settings.taxNumber} 
-                  onChange={(e) => handleChange('taxNumber', e.target.value)}
+                  id="gstNumber" 
+                  placeholder="e.g. 27AAAAA0000A1Z5"
+                  value={settings.gstNumber} 
+                  onChange={(e) => handleChange('gstNumber', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="panNumber">PAN Number</Label>
+                <Input 
+                  id="panNumber" 
+                  placeholder="e.g. ABCDE1234F"
+                  value={settings.panNumber} 
+                  onChange={(e) => handleChange('panNumber', e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -186,19 +236,21 @@ export default function SettingsForm({ initialSettings, onSave, templateId, onTe
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="iban">IBAN</Label>
+                <Label htmlFor="ifsc">IFSC Code</Label>
                 <Input 
-                  id="iban" 
-                  value={settings.iban} 
-                  onChange={(e) => handleChange('iban', e.target.value)}
+                  id="ifsc" 
+                  placeholder="e.g. SBIN0001234"
+                  value={settings.ifscCode} 
+                  onChange={(e) => handleChange('ifscCode', e.target.value)}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="swift">SWIFT / BIC Code</Label>
+                <Label htmlFor="branch">Branch Name</Label>
                 <Input 
-                  id="swift" 
-                  value={settings.swiftCode} 
-                  onChange={(e) => handleChange('swiftCode', e.target.value)}
+                  id="branch" 
+                  placeholder="e.g. Mumbai Main"
+                  value={settings.branchName} 
+                  onChange={(e) => handleChange('branchName', e.target.value)}
                 />
               </div>
             </div>

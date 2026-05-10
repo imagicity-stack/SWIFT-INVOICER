@@ -52,18 +52,21 @@ import Auth from './components/Auth';
 import { toast } from 'sonner';
 
 const DEFAULT_SETTINGS: CompanySettings = {
-  name: 'My Company',
-  address: '123 Business Ave, Suite 100\nCity, State 12345',
-  email: 'hello@company.com',
-  phone: '+1 (555) 000-0000',
-  taxNumber: 'TAX-123456',
-  aboutSection: 'Thank you for your business. We appreciate your partnership!',
-  bankName: 'Global Bank',
-  accountNumber: 'XXXX-XXXX-XXXX-1234',
-  iban: '',
-  swiftCode: '',
-  defaultTaxRate: 10,
-  currency: 'USD',
+  name: 'My Business Name',
+  address: '123, Business Tower\nMumbai, Maharashtra 400001',
+  email: 'billing@business.com',
+  phone: '+91 99999 99999',
+  gstNumber: '',
+  panNumber: '',
+  state: 'Maharashtra',
+  addressStateCode: '27',
+  aboutSection: 'Thank you for your business. This is a computer generated invoice.',
+  bankName: 'HDFC Bank',
+  accountNumber: '50100XXXXXXX',
+  ifscCode: 'HDFC0000001',
+  branchName: 'Mumbai Main',
+  defaultTaxRate: 18,
+  currency: 'INR',
   nextInvoiceNumber: 1,
   invoicePrefix: 'INV-'
 };

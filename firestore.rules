@@ -31,15 +31,20 @@ service cloud.firestore {
     function isValidSettings(s) {
       return s.name is string && s.name.size() <= 100
         && s.email is string && s.email.size() <= 100
-        && s.address is string && s.address.size() <= 500
+        && s.address is string && s.address.size() <= 1000
         && s.phone is string && s.phone.size() <= 50
         && (s.logoUrl == null || (s.logoUrl is string && s.logoUrl.size() <= 500))
-        && s.taxNumber is string && s.taxNumber.size() <= 50
+        && s.gstNumber is string && s.gstNumber.size() <= 20
+        && s.panNumber is string && s.panNumber.size() <= 20
+        && s.state is string && s.state.size() <= 50
+        && s.addressStateCode is string && s.addressStateCode.size() <= 10
         && s.aboutSection is string && s.aboutSection.size() <= 1000
         && s.bankName is string && s.bankName.size() <= 100
         && s.accountNumber is string && s.accountNumber.size() <= 100
+        && s.ifscCode is string && s.ifscCode.size() <= 20
+        && s.branchName is string && s.branchName.size() <= 100
         && s.defaultTaxRate is number && s.defaultTaxRate >= 0 && s.defaultTaxRate <= 100
-        && s.currency is string && s.currency.size() <= 10
+        && s.currency is string && s.currency.size() <= 50
         && s.nextInvoiceNumber is int && s.nextInvoiceNumber >= 0
         && s.invoicePrefix is string && s.invoicePrefix.size() <= 20;
     }

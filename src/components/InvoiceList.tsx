@@ -90,7 +90,9 @@ export default function InvoiceList({ invoices, settings, templateId, onDeleteIn
               <TableCell>
                 <div className="flex flex-col">
                   <span className="font-bold">{invoice.customerName}</span>
-                  <span className="text-xs text-gray-500">{invoice.customerEmail}</span>
+                  <span className="text-[10px] text-gray-400 font-mono uppercase">
+                    {invoice.customerGSTIN ? `GST: ${invoice.customerGSTIN}` : (invoice.customerEmail || 'No Details')}
+                  </span>
                 </div>
               </TableCell>
               <TableCell className="text-sm text-gray-600">

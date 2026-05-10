@@ -66,19 +66,19 @@ export default function UploadSection({ onUploadComplete }: UploadSectionProps) 
 
   const downloadSample = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const headers = 'invoice_id,invoice_number,date,customer_name,customer_email,customer_address,description,quantity,unit_price,tax_rate,notes,Project Name\n';
-    const row1 = 'INV-101,101,2024-05-10,Acme Corp,billing@acme.com,"123 Industrial Way, CA",Software License,1,499.00,10,Annual subscription,Alpha Project\n';
-    const row2 = 'INV-101,101,2024-05-10,Acme Corp,billing@acme.com,"123 Industrial Way, CA",Support Fee,1,50.00,10,,Alpha Project\n';
-    const row3 = 'INV-102,102,2024-05-12,Globex,contact@globex.com,"456 Power Blvd, NY",Consulting,5,150.00,0,Special discount applied,Beta Launch\n';
+    const headers = 'name,address,gstin,item,quantity,price,hsn,date,notes\n';
+    const row1 = 'Acme Corp,"123 Business Way, Mumbai",27AAAAA0000A1Z5,Laptop,1,55000,8471,2024-05-10,Standard Warranty\n';
+    const row2 = 'Acme Corp,"123 Business Way, Mumbai",27AAAAA0000A1Z5,Mouse,2,500,8471,2024-05-10,\n';
+    const row3 = 'Globex Corp,"456 Industrial Blvd, Delhi",07BBBBB1111B2Z6,Consulting,10,2500,9983,2024-05-12,Hourly billing\n';
     
     const blob = new Blob([headers + row1 + row2 + row3], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'sample_invoices.csv';
+    a.download = 'simplified_gst_invoices.csv';
     a.click();
     window.URL.revokeObjectURL(url);
-    toast.info('Sample CSV downloaded');
+    toast.info('Simplified Sample CSV downloaded');
   };
 
   return (
@@ -165,7 +165,7 @@ export default function UploadSection({ onUploadComplete }: UploadSectionProps) 
             <AlertCircle className="w-5 h-5" />
           </div>
           <h3 className="font-bold">Column Hints</h3>
-          <p className="text-sm text-gray-500 italic">Use: invoice_id, customer_name, description, quantity, unit_price, date.</p>
+          <p className="text-sm text-gray-500 italic">Required: name, address, item, quantity, price, hsn. Optional: date, gstin, notes.</p>
         </div>
       </div>
     </div>

@@ -34,65 +34,42 @@ export const parseExcel = async (file: File): Promise<InvoiceData[]> => {
 };
 
 const processRawData = (data: any[]): InvoiceData[] => {
-  // This logic assumes specific column names, or we can try to guess.
-  // For a real app, we might want a mapping step.
-  // For now, let's look for common names or handle group-by invoice ID.
-
   const invoicesMap = new Map<string, InvoiceData>();
 
   data.forEach((row, index) => {
-    const id = row.invoice_id || row.InvoiceID || row.id || `inv-${index}`;
-    const invoiceNumber = row.invoice_number || row.InvoiceNumber || id;
-    
-    if (!invoicesMap.has(id)) {
-      invoicesMap.set(id, {
-        id,
-        invoiceNumber,
-        date: row.date || row.Date || new Date().toISOString().split('T')[0],
+    // Generate a group ID if not provided (assume same customer/date rows belong together)
+    const customerKey = row.name || row.customer_name || row.Customer || row.Party;
+    const dateKey = row.date || row.Date || new Date().toISOString().split('T')[0];
+    const groupId = row.invoice_id || row.id || `${customerKey}-${dateKey}`;
+
+    if (!invoicesMap.has(groupId)) {
+      invoicesMap.set(groupId, {
+        id: groupId,
+        invoiceNumber: row.invoice_number || '', // Will be assigned by App state
+        date: dateKey,
         dueDate: row.due_date || row.DueDate || '',
-        customerName: row.customer_name || row.CustomerName || 'Guest',
-        customerEmail: row.customer_email || row.CustomerEmail || '',
-        customerAddress: row.customer_address || row.CustomerAddress || '',
+        customerName: customerKey || 'Guest',
+        customerEmail: row.email || row.customer_email || '',
+        customerAddress: row.address || row.customer_address || '',
+        customerGSTIN: row.gstin || row.GSTIN || row.customer_gstin || '',
         items: [],
         customFields: [],
         notes: row.notes || row.Notes || '',
       });
     }
 
-    const invoice = invoicesMap.get(id)!;
+    const invoice = invoicesMap.get(groupId)!;
     
-    // Extract custom fields from other columns
-    Object.keys(row).forEach(key => {
-      const lowerKey = key.toLowerCase();
-      const standardKeys = [
-        'invoice_id', 'invoiceid', 'id', 'invoice_number', 'invoicenumber',
-        'date', 'due_date', 'duedate', 'customer_name', 'customername',
-        'customer_email', 'customeremail', 'customer_address', 'customeraddress',
-        'description', 'item', 'quantity', 'qty', 'unit_price', 'unitprice', 'price',
-        'tax_rate', 'taxrate', 'notes'
-      ];
-      
-      if (!standardKeys.includes(lowerKey)) {
-        // If it's not a standard key, it might be a custom field
-        const existingField = invoice.customFields.find(f => f.label.toLowerCase() === lowerKey);
-        if (!existingField) {
-          invoice.customFields.push({
-            id: `custom-${key}`,
-            label: key,
-            value: String(row[key])
-          });
-        }
-      }
-    });
-
     // Add item
-    const description = row.description || row.Description || row.item || row.Item || 'Service';
+    const description = row.item || row.Item || row.description || row.Description || 'Service';
     const quantity = parseFloat(row.quantity || row.Quantity || row.qty || '1');
-    const unitPrice = parseFloat(row.unit_price || row.UnitPrice || row.price || '0');
-    const taxRate = row.tax_rate || row.TaxRate ? parseFloat(row.tax_rate || row.TaxRate) : undefined;
+    const unitPrice = parseFloat(row.unit_price || row.UnitPrice || row.price || row.Price || '0');
+    const hsnCode = String(row.hsn || row.HSN || row.hsn_code || row.hsncode || '');
+    const taxRate = row.tax_rate || row.TaxRate || row.gst_rate || row.gstrate ? parseFloat(row.tax_rate || row.TaxRate || row.gst_rate || row.gstrate) : undefined;
 
     invoice.items.push({
       description,
+      hsnCode,
       quantity,
       unitPrice,
       taxRate,

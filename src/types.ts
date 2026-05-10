@@ -9,13 +9,16 @@ export interface CompanySettings {
   email: string;
   phone: string;
   logoUrl?: string;
-  taxNumber: string;
+  gstNumber: string;
+  panNumber: string;
+  state: string;
+  addressStateCode: string;
   aboutSection: string;
   bankName: string;
   accountNumber: string;
-  iban: string;
-  swiftCode: string;
-  defaultTaxRate: number;
+  ifscCode: string;
+  branchName: string;
+  defaultTaxRate: number; // Will be used for total GST
   currency: string;
   nextInvoiceNumber: number;
   invoicePrefix: string;
@@ -29,6 +32,7 @@ export interface CustomField {
 
 export interface InvoiceItem {
   description: string;
+  hsnCode?: string;
   quantity: number;
   unitPrice: number;
   taxRate?: number;
@@ -42,6 +46,9 @@ export interface InvoiceData {
   customerName: string;
   customerEmail: string;
   customerAddress: string;
+  customerState?: string;
+  customerStateCode?: string;
+  customerGSTIN?: string;
   items: InvoiceItem[];
   customFields: CustomField[];
   notes?: string;
